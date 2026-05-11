@@ -76,6 +76,29 @@ Definidas dentro de `aplicar_reglas()` en `src/main.py`. Cada regla tiene la est
 
 ---
 
+## Casos de Prueba
+
+El sistema incluye 6 casos de prueba, uno por cada diagnóstico posible. Se ejecutan automáticamente al iniciar y también pueden cargarse desde la interfaz gráfica con un click.
+
+| # | Caso | Localización | Morfología | Color | Picazón | Antigüedad | Estrés | Diagnóstico esperado |
+|---|------|-------------|------------|-------|:-------:|:----------:|:------:|---------------------|
+| 1 | Psoriasis crónica | Codos | Escama | Blanco nacarado | 7/10 | 8 meses | Sí | Psoriasis |
+| 2 | Acné agudo | Cara | Pápula | Rojo | 2/10 | 1 mes | No | Acné |
+| 3 | Dishidrosis | Pies | Ampolla | Rosado | 8/10 | 2 meses | No | Dishidrosis |
+| 4 | Pitiriasis alba | Cara | Mácula | Rosado | 1/10 | 5 meses | No | Pitiriasis alba |
+| 5 | Onicomicosis | Uñas | Engrosamiento | Amarillento | 0/10 | 10 meses | No | Onicomicosis |
+| 6 | Eccema con estrés | Flexuras | Escama | Rojo | 8/10 | 2 meses | Sí | Eccema |
+
+---
+
+## Funcionalidades de la Interfaz
+
+- **Barra de casos de prueba**: botones en la parte superior (`C1`–`C6`) que cargan automáticamente todos los campos del formulario con los datos del caso correspondiente.
+- **Guía visual `►`**: al seleccionar una localización, las morfologías válidas según las reglas se marcan con `►` en el desplegable. Al elegir morfología, se marcan los colores válidos.
+- **Subsistema de explicación**: muestra las reglas activadas, el tipo de lógica aplicada y la certeza acumulada por diagnóstico.
+
+---
+
 ## Estructura del repositorio
 
 ```
@@ -89,7 +112,7 @@ src/
 python src/main.py
 ```
 
-Al iniciar, el sistema ejecuta los casos de prueba por consola y luego abre la interfaz gráfica.
+Al iniciar, el sistema ejecuta los 6 casos de prueba por consola y luego abre la interfaz gráfica.
 
 ---
 
