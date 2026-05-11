@@ -428,11 +428,20 @@ class AppSEDerm(tk.Tk):
         "det":      "#2B6CB0",
     }
 
+    _CASOS_PRUEBA = [
+        {"label": "C1 Psoriasis",     "diag": "Psoriasis",      "datos": {"localizacion": "Codos",    "morfologia": "Escama",       "color": "Blanco nacarado", "picazon_escala": 7, "antiguedad": 8,  "estres": True }},
+        {"label": "C2 Acné",          "diag": "Acné",           "datos": {"localizacion": "Cara",     "morfologia": "Pápula",       "color": "Rojo",            "picazon_escala": 2, "antiguedad": 1,  "estres": False}},
+        {"label": "C3 Dishidrosis",   "diag": "Dishidrosis",    "datos": {"localizacion": "Pies",     "morfologia": "Ampolla",      "color": "Rosado",          "picazon_escala": 8, "antiguedad": 2,  "estres": False}},
+        {"label": "C4 Pitiriasis",    "diag": "Pitiriasis alba","datos": {"localizacion": "Cara",     "morfologia": "Mácula",       "color": "Rosado",          "picazon_escala": 1, "antiguedad": 5,  "estres": False}},
+        {"label": "C5 Onicomicosis",  "diag": "Onicomicosis",   "datos": {"localizacion": "Uñas",     "morfologia": "Engrosamiento","color": "Amarillento",     "picazon_escala": 0, "antiguedad": 10, "estres": False}},
+        {"label": "C6 Eccema",        "diag": "Eccema",         "datos": {"localizacion": "Flexuras", "morfologia": "Escama",       "color": "Rojo",            "picazon_escala": 8, "antiguedad": 2,  "estres": True }},
+    ]
+
     def __init__(self):
         super().__init__()
         self.se = SistemaExperto()
         self.title("SE Dermatológico — Dra. Claudia E. Alarcón")
-        self.geometry("1100x720")
+        self.geometry("1100x780")
         self.resizable(True, True)
         self.configure(bg=self.COLORES["fondo"])
         self._construir_ui()
@@ -447,6 +456,21 @@ class AppSEDerm(tk.Tk):
                  text="Diagnóstico orientativo — SE Híbrido (Reglas + Lógica Difusa + Heurística)",
                  font=("Georgia", 9), fg="#BEE3F8",
                  bg=self.COLORES["acento"]).pack()
+
+        # Barra de casos de prueba
+        frame_casos = tk.Frame(self, bg="#1A365D", pady=6)
+        frame_casos.pack(fill="x")
+        tk.Label(frame_casos, text="Casos de prueba:",
+                 font=("Helvetica", 8, "bold"), fg="#BEE3F8",
+                 bg="#1A365D").pack(side="left", padx=(12, 6))
+        for caso in self._CASOS_PRUEBA:
+            tk.Button(
+                frame_casos, text=caso["label"],
+                command=lambda c=caso: self._cargar_caso(c["datos"]),
+                font=("Helvetica", 8), bg="#2B6CB0", fg="white",
+                relief="flat", padx=8, pady=2, cursor="hand2",
+                activebackground="#4299E1", activeforeground="white",
+            ).pack(side="left", padx=3)
 
         contenedor = tk.Frame(self, bg=self.COLORES["fondo"])
         contenedor.pack(fill="both", expand=True, padx=14, pady=10)
@@ -758,6 +782,16 @@ class AppSEDerm(tk.Tk):
                    "ADVERTENCIA: Este sistema es orientativo.\n"
                    "No reemplaza la consulta con un medico especialista.\n", "alerta")
         txt.config(state="disabled")
+
+    def _cargar_caso(self, datos: dict):
+        """Carga automáticamente todos los campos del formulario con los datos del caso."""
+        self.var_loc.set(datos["localizacion"])
+        self.var_morf.set(datos["morfologia"])
+        self.var_color.set(datos["color"])
+        self.var_picazon.set(int(datos["picazon_escala"]))
+        self.var_antig.set(datos["antiguedad"])
+        self.var_estres.set(datos["estres"])
+        self._actualizar_etiqueta_picazon()
 
     def _limpiar(self):
         self.var_loc.set("")
