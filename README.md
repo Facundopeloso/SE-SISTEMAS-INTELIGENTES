@@ -88,6 +88,9 @@ El sistema incluye 6 casos de prueba, uno por cada diagnóstico posible. Se ejec
 | 4 | Pitiriasis alba | Cara | Mácula | Rosado | 1/10 | 5 meses | No | Pitiriasis alba |
 | 5 | Onicomicosis | Uñas | Engrosamiento | Amarillento | 0/10 | 10 meses | No | Onicomicosis |
 | 6 | Eccema con estrés | Flexuras | Escama | Rojo | 8/10 | 2 meses | Sí | Eccema |
+| 7 | **CRÍTICO** Eccema vs Psoriasis | Flexuras | Escama | Blanco nacarado | 8/10 | 6 meses | Sí | Psoriasis *(87% vs Eccema 82%)* |
+
+> **Caso 7 — Caso crítico:** activa R06 (Psoriasis) y R12 (Eccema) simultáneamente. Ambas heurísticas de estrés se disparan (R07 + R14). El sistema resuelve la ambigüedad por margen mínimo de 5%, demostrando la capacidad del SE para distinguir diagnósticos con síntomas solapados.
 
 ---
 

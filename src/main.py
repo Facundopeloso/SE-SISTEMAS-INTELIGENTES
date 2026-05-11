@@ -435,6 +435,7 @@ class AppSEDerm(tk.Tk):
         {"label": "C4 Pitiriasis",    "diag": "Pitiriasis alba","datos": {"localizacion": "Cara",     "morfologia": "Mácula",       "color": "Rosado",          "picazon_escala": 1, "antiguedad": 5,  "estres": False}},
         {"label": "C5 Onicomicosis",  "diag": "Onicomicosis",   "datos": {"localizacion": "Uñas",     "morfologia": "Engrosamiento","color": "Amarillento",     "picazon_escala": 0, "antiguedad": 10, "estres": False}},
         {"label": "C6 Eccema",        "diag": "Eccema",         "datos": {"localizacion": "Flexuras", "morfologia": "Escama",       "color": "Rojo",            "picazon_escala": 8, "antiguedad": 2,  "estres": True }},
+        {"label": "C7 Crítico",       "diag": "Psoriasis",      "datos": {"localizacion": "Flexuras", "morfologia": "Escama",       "color": "Blanco nacarado", "picazon_escala": 8, "antiguedad": 6,  "estres": True }},
     ]
 
     def __init__(self):
@@ -860,6 +861,13 @@ def ejecutar_casos_prueba():
                       "color": "Rojo", "picazon_escala": 8,
                       "antiguedad": 2, "estres": True},
             "esperado": "Eccema",
+        },
+        {
+            "nombre": "Caso 7 - CRITICO: Eccema vs Psoriasis (ambiguo)",
+            "datos": {"localizacion": "Flexuras", "morfologia": "Escama",
+                      "color": "Blanco nacarado", "picazon_escala": 8,
+                      "antiguedad": 6, "estres": True},
+            "esperado": "Psoriasis",
         },
     ]
 
