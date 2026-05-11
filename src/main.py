@@ -89,6 +89,50 @@ class SistemaExperto:
         }
 
     # -------------------------------------------------------------------------
+    # MÓDULO 0: FILTRO DE OPCIONES VÁLIDAS — Cascada de dropdowns
+    # -------------------------------------------------------------------------
+
+    _TODAS_MORF    = ["Mácula", "Pápula", "Ampolla", "Escama", "Engrosamiento"]
+    _TODOS_COLORES = ["Amarillento", "Blanco nacarado", "Rosado", "Rojo"]
+
+    # Localizaciones donde CUALQUIER morfología es válida (regla activada sólo por picazón)
+    _LOCS_CUALQUIER_MORF = {"Manos", "Flexuras"}
+
+    # Tuplas (loc, morf, color) derivadas de reglas con restricciones explícitas de dropdown.
+    # None = sin restricción en esa dimensión. Se excluyen R08/R11/R12 (solo picazón).
+    _DROPDOWN_COMBOS = [
+        ("Uñas",     None,            "Amarillento"    ),  # R01
+        ("Uñas",     "Engrosamiento", None             ),  # R02
+        ("Cara",     "Pápula",        None             ),  # R03
+        ("Espalda",  "Pápula",        None             ),  # R04
+        ("Codos",    None,            "Blanco nacarado"),  # R05
+        ("Rodillas", None,            "Blanco nacarado"),  # R05
+        (None,       "Escama",        "Blanco nacarado"),  # R06
+        ("Pies",     "Ampolla",       None             ),  # R09
+        (None,       "Mácula",        "Rosado"         ),  # R10
+        (None,       "Escama",        "Rojo"           ),  # R13
+    ]
+
+    def morfologias_validas(self, loc: str) -> list:
+        """Morfologías que llevan a algún diagnóstico dado la localización."""
+        if loc in self._LOCS_CUALQUIER_MORF:
+            return self._TODAS_MORF
+        coinciden = [c for c in self._DROPDOWN_COMBOS if c[0] == loc or c[0] is None]
+        if any(c[1] is None for c in coinciden):
+            return self._TODAS_MORF
+        return sorted({c[1] for c in coinciden if c[1] is not None})
+
+    def colores_validos(self, loc: str, morf: str) -> list:
+        """Colores que llevan a algún diagnóstico dada la localización y morfología."""
+        coinciden = [
+            c for c in self._DROPDOWN_COMBOS
+            if (c[0] == loc or c[0] is None) and (c[1] == morf or c[1] is None)
+        ]
+        if any(c[2] is None for c in coinciden):
+            return self._TODOS_COLORES
+        return sorted({c[2] for c in coinciden if c[2] is not None})
+
+    # -------------------------------------------------------------------------
     # MÓDULO 2: BASE DE CONOCIMIENTO — 20 Reglas IF-THEN
     # -------------------------------------------------------------------------
 
@@ -448,13 +492,14 @@ class AppSEDerm(tk.Tk):
 
         self._lbl_sec(parent, "🔬 Morfología")
         self.var_morf = tk.StringVar()
-        self._combo(parent, ["Mácula", "Pápula", "Ampolla", "Escama",
-                              "Engrosamiento"], self.var_morf)
+        self.cb_morf = self._combo(parent, self.se._TODAS_MORF, self.var_morf)
 
         self._lbl_sec(parent, "🎨 Coloración predominante")
         self.var_color = tk.StringVar()
-        self._combo(parent, ["Amarillento", "Blanco nacarado", "Rosado",
-                              "Rojo"], self.var_color)
+        self.cb_color = self._combo(parent, self.se._TODOS_COLORES, self.var_color)
+
+        self.var_loc.trace_add("write", self._on_loc_change)
+        self.var_morf.trace_add("write", self._on_morf_change)
 
         self._lbl_sec(parent, "😣 Intensidad de picazón (0 = nula, 10 = máxima)")
         self.var_picazon = tk.IntVar(value=0)
@@ -579,6 +624,25 @@ class AppSEDerm(tk.Tk):
         self.texto_explicacion.tag_config("header", font=("Courier", 9, "bold"))
         self.texto_explicacion.tag_config("alerta", foreground=self.COLORES["alerta"])
 
+    def _on_loc_change(self, *_):
+        loc = self.var_loc.get()
+        if not loc:
+            return
+        morfs = self.se.morfologias_validas(loc)
+        self.cb_morf["values"] = morfs
+        self.var_morf.set("")
+        self.cb_color["values"] = self.se._TODOS_COLORES
+        self.var_color.set("")
+
+    def _on_morf_change(self, *_):
+        loc  = self.var_loc.get()
+        morf = self.var_morf.get()
+        if not loc or not morf:
+            return
+        colors = self.se.colores_validos(loc, morf)
+        self.cb_color["values"] = colors
+        self.var_color.set("")
+
     def _actualizar_etiqueta_picazon(self, _=None):
         etiq = self.se.clasificar_picazón(self.var_picazon.get())
         self.lbl_picazon_etiq.config(text=f"Etiqueta difusa: {etiq}")
@@ -685,6 +749,8 @@ class AppSEDerm(tk.Tk):
         self.var_loc.set("")
         self.var_morf.set("")
         self.var_color.set("")
+        self.cb_morf["values"]  = self.se._TODAS_MORF
+        self.cb_color["values"] = self.se._TODOS_COLORES
         self.var_picazon.set(0)
         self.var_antig.set(1)
         self.var_estres.set(False)
