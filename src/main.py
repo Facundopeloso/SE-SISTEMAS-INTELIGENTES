@@ -89,6 +89,46 @@ class SistemaExperto:
         }
 
     # -------------------------------------------------------------------------
+    # GUÍA DE OPCIONES VÁLIDAS — para resaltar en la GUI sin restringir entradas
+    # -------------------------------------------------------------------------
+
+    # (loc, morf, color) — None = sin restricción. Excluye reglas puras de picazón.
+    _COMBOS_GUIA = [
+        ("Uñas",     None,            "Amarillento"    ),  # R01
+        ("Uñas",     "Engrosamiento", None             ),  # R02
+        ("Cara",     "Pápula",        None             ),  # R03
+        ("Espalda",  "Pápula",        None             ),  # R04
+        ("Codos",    None,            "Blanco nacarado"),  # R05
+        ("Rodillas", None,            "Blanco nacarado"),  # R05
+        (None,       "Escama",        "Blanco nacarado"),  # R06
+        ("Manos",    None,            None             ),  # R08
+        ("Pies",     "Ampolla",       None             ),  # R09
+        (None,       "Mácula",        "Rosado"         ),  # R10
+        ("Cara",     None,            None             ),  # R11
+        ("Flexuras", None,            None             ),  # R12
+        (None,       "Escama",        "Rojo"           ),  # R13
+    ]
+
+    def morfologias_sugeridas(self, loc: str) -> set:
+        """Morfologías que activan al menos una regla para la localización dada."""
+        todas = {"Mácula", "Pápula", "Ampolla", "Escama", "Engrosamiento"}
+        coinciden = [c for c in self._COMBOS_GUIA if c[0] == loc or c[0] is None]
+        if any(c[1] is None for c in coinciden):
+            return todas
+        return {c[1] for c in coinciden if c[1] is not None}
+
+    def colores_sugeridos(self, loc: str, morf: str) -> set:
+        """Colores que activan al menos una regla para la loc+morf dadas."""
+        todos = {"Amarillento", "Blanco nacarado", "Rosado", "Rojo"}
+        coinciden = [
+            c for c in self._COMBOS_GUIA
+            if (c[0] == loc or c[0] is None) and (c[1] == morf or c[1] is None)
+        ]
+        if any(c[2] is None for c in coinciden):
+            return todos
+        return {c[2] for c in coinciden if c[2] is not None}
+
+    # -------------------------------------------------------------------------
     # MÓDULO 2: BASE DE CONOCIMIENTO — 20 Reglas IF-THEN
     # -------------------------------------------------------------------------
 
@@ -448,13 +488,16 @@ class AppSEDerm(tk.Tk):
 
         self._lbl_sec(parent, "🔬 Morfología")
         self.var_morf = tk.StringVar()
-        self._combo(parent, ["Mácula", "Pápula", "Ampolla", "Escama",
-                              "Engrosamiento"], self.var_morf)
+        self.cb_morf = self._combo(parent, ["Mácula", "Pápula", "Ampolla",
+                                            "Escama", "Engrosamiento"], self.var_morf)
 
         self._lbl_sec(parent, "🎨 Coloración predominante")
         self.var_color = tk.StringVar()
-        self._combo(parent, ["Amarillento", "Blanco nacarado", "Rosado",
-                              "Rojo"], self.var_color)
+        self.cb_color = self._combo(parent, ["Amarillento", "Blanco nacarado",
+                                             "Rosado", "Rojo"], self.var_color)
+
+        self.var_loc.trace_add("write", self._on_loc_change)
+        self.var_morf.trace_add("write", self._on_morf_change)
 
         self._lbl_sec(parent, "😣 Intensidad de picazón (0 = nula, 10 = máxima)")
         self.var_picazon = tk.IntVar(value=0)
@@ -579,19 +622,54 @@ class AppSEDerm(tk.Tk):
         self.texto_explicacion.tag_config("header", font=("Courier", 9, "bold"))
         self.texto_explicacion.tag_config("alerta", foreground=self.COLORES["alerta"])
 
+    _MARKER = "► "
+    _TODAS_MORF    = ["Mácula", "Pápula", "Ampolla", "Escama", "Engrosamiento"]
+    _TODOS_COLORES = ["Amarillento", "Blanco nacarado", "Rosado", "Rojo"]
+
+    def _valor_limpio(self, val: str) -> str:
+        return val.replace(self._MARKER, "")
+
+    def _con_marcas(self, opciones: list, sugeridas: set) -> list:
+        return [
+            (self._MARKER + o if o in sugeridas else o)
+            for o in opciones
+        ]
+
+    def _on_loc_change(self, *_):
+        loc = self._valor_limpio(self.var_loc.get())
+        if not loc:
+            return
+        sug = self.se.morfologias_sugeridas(loc)
+        self.cb_morf["values"] = self._con_marcas(self._TODAS_MORF, sug)
+        self.var_morf.set("")
+        self.cb_color["values"] = self._TODOS_COLORES
+        self.var_color.set("")
+
+    def _on_morf_change(self, *_):
+        loc  = self._valor_limpio(self.var_loc.get())
+        morf = self._valor_limpio(self.var_morf.get())
+        if not loc or not morf:
+            return
+        sug = self.se.colores_sugeridos(loc, morf)
+        self.cb_color["values"] = self._con_marcas(self._TODOS_COLORES, sug)
+        self.var_color.set("")
+
     def _actualizar_etiqueta_picazon(self, _=None):
         etiq = self.se.clasificar_picazón(self.var_picazon.get())
         self.lbl_picazon_etiq.config(text=f"Etiqueta difusa: {etiq}")
 
     def _ejecutar_diagnostico(self):
-        if not self.var_loc.get() or not self.var_morf.get() or not self.var_color.get():
+        loc  = self._valor_limpio(self.var_loc.get())
+        morf = self._valor_limpio(self.var_morf.get())
+        color = self._valor_limpio(self.var_color.get())
+        if not loc or not morf or not color:
             messagebox.showwarning("Datos incompletos",
                                    "Por favor completá: Localización, Morfología y Color.")
             return
         datos = {
-            "localizacion":   self.var_loc.get(),
-            "morfologia":     self.var_morf.get(),
-            "color":          self.var_color.get(),
+            "localizacion":   loc,
+            "morfologia":     morf,
+            "color":          color,
             "picazon_escala": float(self.var_picazon.get()),
             "antiguedad":     self.var_antig.get(),
             "estres":         self.var_estres.get(),
@@ -741,6 +819,13 @@ def ejecutar_casos_prueba():
                       "color": "Amarillento", "picazon_escala": 0,
                       "antiguedad": 10, "estres": False},
             "esperado": "Onicomicosis",
+        },
+        {
+            "nombre": "Caso 6 - Eccema en flexuras con estres",
+            "datos": {"localizacion": "Flexuras", "morfologia": "Escama",
+                      "color": "Rojo", "picazon_escala": 8,
+                      "antiguedad": 2, "estres": True},
+            "esperado": "Eccema",
         },
     ]
 
